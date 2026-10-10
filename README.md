@@ -1,9 +1,9 @@
-# AI Database Workspace
+# AskDB
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-documentation%20audited-emerald.svg)](docs/07-progress.md)
 
-An open-source, developer-first AI Database Workspace where you can connect your PostgreSQL database, ask questions in natural language, explore data with interactive visualizations, and instantly navigate an auto-generated admin interface—without manually building frontend pages.
+**AskDB** is an open-source, developer-first AI Database Workspace where you can connect your PostgreSQL database, ask questions in natural language, explore data with interactive visualizations, and instantly navigate an auto-generated admin interface—without manually building frontend pages.
 
 Built with a focus on **strict query safety**, **defense-in-depth security**, and **clean modular architecture**, designed for straightforward self-hosting or scalable multi-tenant SaaS deployment.
 
@@ -38,13 +38,13 @@ Built with a focus on **strict query safety**, **defense-in-depth security**, an
 ## 📁 Repository Structure
 
 ```
-ai-database-workspace/
+askdb/
 ├── apps/
 │   ├── api/                 # FastAPI backend application
 │   └── web/                 # Next.js 14 frontend application
 ├── infra/                   # Docker Compose and local infrastructure definitions
 ├── docs/                    # Complete architectural and feature documentation
-│   ├── 01-mvp-core.md       # MVP specification & security audit
+│   ├── 01-mvp-core.md       # AskDB MVP specification & security audit
 │   ├── 02-feature-write-actions.md   # Confirmed write actions (Phase 2)
 │   ├── 03-feature-local-connector.md # Local database connector (Phase 2/3)
 │   ├── 04-feature-future-roadmap.md  # Multi-database & enterprise roadmap

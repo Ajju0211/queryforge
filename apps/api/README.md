@@ -1,7 +1,7 @@
 # apps/api - Backend REST API
 
 ## Overview
-This directory contains the FastAPI backend service for the **AI Database Workspace**.
+This directory contains the FastAPI backend service for **AskDB**.
 
 ## Technology Stack
 - **Framework:** FastAPI (Python 3.12+)

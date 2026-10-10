@@ -1,6 +1,6 @@
-# Contributing to AI Database Workspace
+# Contributing to AskDB
 
-Thank you for your interest in contributing to **AI Database Workspace**! We welcome contributions from the community to help build a developer-first, secure, and open-source AI database workspace.
+Thank you for your interest in contributing to **AskDB**! We welcome contributions from the community to help build a developer-first, secure, and open-source AI database workspace.
 
 ---
 
@@ -26,8 +26,8 @@ To run and contribute to this project locally, ensure you have:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-org/ai-database-workspace.git
-   cd ai-database-workspace
+   git clone https://github.com/your-org/askdb.git
+   cd askdb
    ```
 
 2. **Configure Environment Variables:**

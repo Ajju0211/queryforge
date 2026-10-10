@@ -1,7 +1,7 @@
 # apps/web - Frontend Web Application
 
 ## Overview
-This directory contains the Next.js 14+ (App Router) frontend application for the **AI Database Workspace**.
+This directory contains the Next.js 14+ (App Router) frontend application for **AskDB**.
 
 ## Technology Stack
 - **Framework:** Next.js 14+ (React 18+, TypeScript)

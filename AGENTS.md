@@ -1,6 +1,6 @@
 # AI Agent Operating Guidelines (`AGENTS.md`)
 
-Welcome, AI Agent. This document outlines the mandatory operational standards, security guardrails, architecture principles, and coding conventions for contributing to the **AI Database Workspace** repository.
+Welcome, AI Agent. This document outlines the mandatory operational standards, security guardrails, architecture principles, and coding conventions for contributing to the **AskDB** repository.
 
 ---
 

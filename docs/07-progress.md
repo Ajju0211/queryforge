@@ -1,4 +1,4 @@
-# Project Implementation Progress & Tracking
+# AskDB - Project Implementation Progress & Tracking
 
 > **Last Updated:** October 2026  
 > **Current Phase:** Pre-Implementation / Repository Preparation Complete  

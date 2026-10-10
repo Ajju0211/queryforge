@@ -2,7 +2,7 @@
 
 ## 1. Overview & Execution Principles
 
-This backlog defines the implementation tasks required to build the **AI Database Workspace MVP**. Every task is dependency-ordered to ensure a strict progression from foundational infrastructure to the end-to-end **Vertical Slice 1**, followed by complete MVP capabilities.
+This backlog defines the implementation tasks required to build the **AskDB MVP**. Every task is dependency-ordered to ensure a strict progression from foundational infrastructure to the end-to-end **Vertical Slice 1**, followed by complete MVP capabilities.
 
 ### Rules of Engagement
 1. **Never skip prerequisites:** Do not start a task until all prerequisite tasks are verified.

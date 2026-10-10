@@ -1,8 +1,8 @@
-# AI Database Workspace - Minimum Viable Product (MVP) Specification
+# AskDB - Minimum Viable Product (MVP) Specification
 
 ## 1. Document Purpose & Overview
 
-This document specifies the target architecture, security guardrails, technology choices, and acceptance criteria for the **AI Database Workspace MVP**. 
+This document specifies the target architecture, security guardrails, technology choices, and acceptance criteria for the **AskDB MVP**. 
 
 The goal of the product is to provide an open-source, developer-first workspace where teams can:
 1. Connect a remote PostgreSQL database over a secure TLS connection.

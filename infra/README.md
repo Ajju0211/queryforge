@@ -1,7 +1,7 @@
 # infra - Local Infrastructure & Services
 
 ## Overview
-This directory contains infrastructure configurations for running the **AI Database Workspace** locally using Docker Compose.
+This directory contains infrastructure configurations for running **AskDB** locally using Docker Compose.
 
 ## Services
 1. **`app-postgres` (Port 5432):**

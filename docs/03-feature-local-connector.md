@@ -7,7 +7,7 @@
 
 ## 1. Feature Objective
 
-Enable developers and enterprise teams to connect databases running on `localhost`, inside private VPCs, or behind corporate firewalls to the AI Database Workspace without opening inbound firewall ports, configuring complex VPNs, or sending raw database credentials across the internet.
+Enable developers and enterprise teams to connect databases running on `localhost`, inside private VPCs, or behind corporate firewalls to **AskDB** without opening inbound firewall ports, configuring complex VPNs, or sending raw database credentials across the internet.
 
 ---
 
@@ -48,7 +48,7 @@ The Local Database Connector integrates cleanly because of abstractions establis
    ```bash
    docker run -e AGENT_TOKEN=ag_conn_xyz123 \
               -e TARGET_DB_URL="postgresql://user:pass@localhost:5432/my_db" \
-              ghcr.io/ai-database-workspace/connector:latest
+              ghcr.io/askdb/connector:latest
    ```
 2. **Outbound Handshake:** The agent initiates an outbound WebSocket (WSS) or gRPC connection to `wss://api.yourdomain.com/api/v1/tunnel`. No inbound firewall ports are opened on the customer side.
 3. **Local Schema Discovery:** Upon connecting, the agent performs local schema introspection and streams the structured schema JSON up to the backend to populate the workspace.

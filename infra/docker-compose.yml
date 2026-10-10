@@ -3,7 +3,7 @@ services:
   # Used to store users, workspaces, encrypted connection configs, metadata, and audit logs.
   app-postgres:
     image: postgres:16-alpine
-    container_name: ai_workspace_app_db
+    container_name: askdb_app_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -23,7 +23,7 @@ services:
   # Used for local development and integration tests to simulate a customer PostgreSQL instance.
   customer-demo-postgres:
     image: postgres:16-alpine
-    container_name: ai_workspace_demo_customer_db
+    container_name: askdb_demo_customer_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres

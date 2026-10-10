@@ -2,7 +2,7 @@
 
 ## 1. System Overview & Component Responsibilities
 
-The AI Database Workspace is architected as a clean modular monolith within a single Git repository. The system strictly separates application management state from customer database operations.
+**AskDB** is architected as a clean modular monolith within a single Git repository. The system strictly separates application management state from customer database operations.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
