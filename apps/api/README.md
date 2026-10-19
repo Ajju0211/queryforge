@@ -1,7 +1,7 @@
 # apps/api - Backend REST API
 
 ## Overview
-This directory contains the FastAPI backend service for **AskDB**.
+This directory contains the FastAPI backend service for **QueryForge AI**.
 
 ## Technology Stack
 - **Framework:** FastAPI (Python 3.12+)
@@ -13,7 +13,7 @@ This directory contains the FastAPI backend service for **AskDB**.
 - **Testing:** `pytest`, `pytest-asyncio`, `testcontainers[postgres]`
 
 ## Implementation Scope
-- JWT authentication and workspace isolation
+- Single-user developer workflow & connection management
 - Credential encryption and key rotation
 - Network SSRF guard and TLS connection verification
 - PostgreSQL schema introspection service
