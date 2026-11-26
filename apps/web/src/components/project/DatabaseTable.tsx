@@ -20,7 +20,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
-import { Database, Trash2, ChevronRight } from "lucide-react";
+import { Database, Trash2, ChevronRight, Copy, Check } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface DatabaseTableProps {
   connections: ConnectionEntity[];
@@ -37,6 +42,49 @@ export function DatabaseTable({
 }: DatabaseTableProps) {
   const [connectionToDelete, setConnectionToDelete] = useState<ConnectionEntity | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyHost = (conn: ConnectionEntity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const str = `${conn.username}@${conn.host}:${conn.port}/${conn.database}`;
+    navigator.clipboard.writeText(str);
+    setCopiedId(conn.id);
+    setTimeout(() => setCopiedId(null), 2000);
+    toast.success("Connection string copied", { description: str });
+  };
+
+  const getStatusBadge = (status: ConnectionEntity["status"]) => {
+    switch (status) {
+      case "ACTIVE":
+        return (
+          <Badge variant="emerald" size="sm" className="gap-1.5 font-mono text-[10px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-signal animate-pulse" />
+            ACTIVE
+          </Badge>
+        );
+      case "INTROSPECTION_FAILED":
+        return (
+          <Badge variant="amber" size="sm" className="gap-1.5 font-mono text-[10px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+            ATTENTION
+          </Badge>
+        );
+      case "UNREACHABLE":
+        return (
+          <Badge variant="red" size="sm" className="gap-1.5 font-mono text-[10px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+            OFFLINE
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="neutral" size="sm" className="gap-1.5 font-mono text-[10px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+            {status}
+          </Badge>
+        );
+    }
+  };
 
   const handleConfirmDelete = async () => {
     if (!connectionToDelete) return;
@@ -49,11 +97,11 @@ export function DatabaseTable({
       setConnectionToDelete(null);
 
       if (success) {
-        toast.success("Connection Removed", {
+        toast.success("Connection removed", {
           description: `Deleted "${target.name}".`,
         });
       } else {
-        toast.error("Failed to Delete Connection", {
+        toast.error("Connection not deleted", {
           description: errorMessage || "Could not delete connection from database.",
         });
       }
@@ -61,124 +109,155 @@ export function DatabaseTable({
       setIsDeleting(false);
       setConnectionToDelete(null);
       const msg = err instanceof Error ? err.message : "Failed to delete connection.";
-      toast.error("Delete Error", { description: msg });
+      toast.error("Delete error", { description: msg });
     }
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col p-6 min-h-0 overflow-auto">
-      <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border">
-              <TableHead className="font-semibold text-xs py-2.5 px-4 text-foreground/80">Database Name</TableHead>
-              <TableHead className="font-semibold text-xs py-2.5 px-4 text-foreground/80">Host</TableHead>
-              <TableHead className="font-semibold text-xs py-2.5 px-4 text-foreground/80">Port</TableHead>
-              <TableHead className="font-semibold text-xs py-2.5 px-4 text-foreground/80">Database</TableHead>
-              <TableHead className="font-semibold text-xs py-2.5 px-4 text-foreground/80">Username</TableHead>
-              <TableHead className="font-semibold text-xs py-2.5 px-4 text-foreground/80">SSL Mode</TableHead>
-              <TableHead className="font-semibold text-xs py-2.5 px-4 text-foreground/80">Status</TableHead>
-              <TableHead className="font-semibold text-xs py-2.5 px-4 text-right text-foreground/80">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {connections.map((conn) => (
-              <TableRow
-                key={conn.id}
-                onClick={() => onSelectConnection(conn)}
-                className="cursor-pointer hover:bg-muted/30 transition-colors group border-b border-border/60"
-                title={`Click to open ${conn.name}`}
-              >
-                <TableCell className="py-2.5 px-4 font-medium text-xs">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-md bg-muted text-muted-foreground group-hover:text-foreground transition-colors shrink-0">
-                      <Database className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <span className="font-semibold text-foreground group-hover:underline underline-offset-2 transition-colors block">
-                        {conn.name}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground block">
-                        Click to access tables & schema
-                      </span>
-                    </div>
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-auto">
+      <Table className="min-w-[720px]">
+        <TableHeader className="sticky top-0 z-10 bg-background">
+          <TableRow className="border-b border-border hover:bg-transparent">
+            <TableHead className="h-9 px-4 text-[11px] font-medium text-muted-foreground">
+              Connection
+            </TableHead>
+            <TableHead className="h-9 px-4 text-[11px] font-medium text-muted-foreground">
+              Host
+            </TableHead>
+            <TableHead className="h-9 px-4 text-[11px] font-medium text-muted-foreground">
+              Database
+            </TableHead>
+            <TableHead className="h-9 px-4 text-[11px] font-medium text-muted-foreground">
+              User
+            </TableHead>
+            <TableHead className="h-9 px-4 text-[11px] font-medium text-muted-foreground">
+              SSL
+            </TableHead>
+            <TableHead className="h-9 px-4 text-[11px] font-medium text-muted-foreground">
+              Status
+            </TableHead>
+            <TableHead className="h-9 px-4 text-right text-[11px] font-medium text-muted-foreground">
+              <span className="sr-only">Actions</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {connections.map((conn) => (
+            <TableRow
+              key={conn.id}
+              onClick={() => onSelectConnection(conn)}
+              className="group h-13 cursor-pointer border-b border-border/60 transition-all duration-150 hover:bg-muted/40"
+              title={`Open ${conn.name}`}
+            >
+              <TableCell className="px-4 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors group-hover:text-foreground group-hover:border-foreground/30">
+                    <Database className="h-3.5 w-3.5" />
                   </div>
-                </TableCell>
-                <TableCell className="py-2.5 px-4 font-mono text-xs text-muted-foreground">
-                  {conn.host}
-                </TableCell>
-                <TableCell className="py-2.5 px-4 font-mono text-xs text-muted-foreground">
-                  {conn.port}
-                </TableCell>
-                <TableCell className="py-2.5 px-4 font-mono text-xs text-muted-foreground">
-                  {conn.database}
-                </TableCell>
-                <TableCell className="py-2.5 px-4 font-mono text-xs text-muted-foreground">
-                  {conn.username}
-                </TableCell>
-                <TableCell className="py-2.5 px-4">
-                  <Badge variant="outline" size="sm" className="font-mono text-[10px] uppercase">
-                    {conn.ssl_mode}
-                  </Badge>
-                </TableCell>
-                <TableCell className="py-2.5 px-4">
-                  <Badge
-                    variant={conn.status === "ACTIVE" ? "emerald" : "amber"}
-                    size="sm"
-                    className="gap-1.5 font-mono text-[10px]"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                    {conn.status}
-                  </Badge>
-                </TableCell>
-                <TableCell
-                  className="py-2.5 px-4 text-right"
-                  onClick={(e) => e.stopPropagation()}
+                  <div className="min-w-0">
+                    <span className="truncate text-[13px] font-semibold text-foreground group-hover:text-primary">
+                      {conn.name}
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground font-mono">
+                      PostgreSQL
+                    </span>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell className="px-4 py-2.5 font-mono text-[12px] tabular-nums text-muted-foreground">
+                {conn.host}:{conn.port}
+              </TableCell>
+              <TableCell className="px-4 py-2.5 font-mono text-[12px] font-medium text-foreground">
+                {conn.database}
+              </TableCell>
+              <TableCell className="px-4 py-2.5 font-mono text-[12px] text-muted-foreground">
+                {conn.username}
+              </TableCell>
+              <TableCell className="px-4 py-2.5">
+                <Badge
+                  variant="outline"
+                  size="sm"
+                  className="font-mono text-[10px] tracking-wide uppercase"
                 >
-                  <div className="flex items-center justify-end gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onSelectConnection(conn)}
-                      className="text-xs h-7 px-2 text-foreground hover:bg-muted font-medium gap-1"
-                    >
-                      <span>Open</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </Button>
+                  {conn.ssl_mode}
+                </Badge>
+              </TableCell>
+              <TableCell className="px-4 py-2.5">
+                {getStatusBadge(conn.status)}
+              </TableCell>
+              <TableCell className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => handleCopyHost(conn, e)}
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        aria-label="Copy connection string"
+                      >
+                        {copiedId === conn.id ? (
+                          <Check className="h-3.5 w-3.5 text-signal" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Copy connection string</TooltipContent>
+                  </Tooltip>
 
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setConnectionToDelete(conn)}
-                      className="text-muted-foreground hover:text-destructive h-7 w-7 rounded-md"
-                      aria-label={`Delete connection ${conn.name}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onSelectConnection(conn)}
+                    className="h-7.5 gap-1 px-2.5 text-[12px] font-medium text-foreground hover:bg-muted"
+                  >
+                    <span>Open</span>
+                    <ChevronRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
+                  </Button>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setConnectionToDelete(conn)}
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        aria-label={`Delete connection ${conn.name}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Delete connection</TooltipContent>
+                  </Tooltip>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
       {/* Confirmation Dialog for Deletion */}
       <Dialog
         open={Boolean(connectionToDelete)}
         onOpenChange={(open) => !open && setConnectionToDelete(null)}
       >
-        <DialogContent className="sm:max-w-md p-5 rounded-lg bg-card border-border shadow-xl">
+        <DialogContent className="p-5 sm:max-w-md">
           <DialogHeader className="space-y-1.5 text-left">
-            <DialogTitle className="text-base font-semibold text-foreground">
-              Delete Database Connection?
+            <DialogTitle className="font-display text-base font-semibold text-foreground">
+              Delete database connection?
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Are you sure you want to disconnect <span className="font-semibold text-foreground font-mono">&quot;{connectionToDelete?.name}&quot;</span>?
+            <DialogDescription className="text-[13px] leading-relaxed text-muted-foreground">
+              This removes{" "}
+              <span className="font-mono font-medium text-foreground">
+                &quot;{connectionToDelete?.name}&quot;
+              </span>{" "}
+              and its cached schema from QueryForge. The database itself is not
+              changed.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+          <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
             <Button
               type="button"
               variant="ghost"
@@ -195,8 +274,8 @@ export function DatabaseTable({
               onClick={handleConfirmDelete}
               isLoading={isDeleting}
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete Connection</span>
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete connection</span>
             </Button>
           </div>
         </DialogContent>

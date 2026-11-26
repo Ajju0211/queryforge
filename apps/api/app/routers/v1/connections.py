@@ -17,8 +17,11 @@ from app.schemas.connection import (
     ConnectionTestRequest,
     ConnectionTestResponse,
     ConnectionWithSchemaResponse,
+    ExecuteQueryRequest,
+    ExecuteQueryResponse,
     SchemaGraph,
     TableExclusionUpdateRequest,
+    TableRowsResponse,
 )
 from app.services.connection_service import ConnectionService
 
@@ -162,3 +165,50 @@ async def toggle_table_exclusion(
         "table_name": table_name,
         "is_excluded": request.is_excluded,
     }
+
+
+@router.get(
+    "/{connection_id}/tables/{table_name}/rows",
+    response_model=TableRowsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Fetch paginated rows from a database table",
+)
+async def get_table_rows(
+    connection_id: str,
+    table_name: str,
+    schema: Optional[str] = Query(default="public", description="Database schema name"),
+    page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
+    limit: int = Query(default=50, ge=1, le=100, description="Items per page (max 100)"),
+    sort: Optional[str] = Query(default=None, description="Column name to sort by"),
+    order: Optional[str] = Query(default="asc", pattern=r"^(?i)(asc|desc)$", description="Sort order"),
+    service: ConnectionService = Depends(get_connection_service),
+) -> TableRowsResponse:
+    """Retrieve live paginated rows and column definitions from a target database table."""
+    return await service.get_table_rows(
+        connection_id=connection_id,
+        table_name=table_name,
+        schema_name=schema or "public",
+        page=page,
+        limit=limit,
+        sort=sort,
+        order=order or "asc",
+    )
+
+
+@router.post(
+    "/{connection_id}/execute",
+    response_model=ExecuteQueryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Execute arbitrary SQL query on target database",
+)
+async def execute_query(
+    connection_id: str,
+    request: ExecuteQueryRequest,
+    service: ConnectionService = Depends(get_connection_service),
+) -> ExecuteQueryResponse:
+    """Execute any arbitrary SQL query on the target database without restriction."""
+    return await service.execute_query(
+        connection_id=connection_id,
+        query=request.query,
+    )
+

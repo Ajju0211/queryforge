@@ -189,7 +189,7 @@ class ConnectionPoolManager:
         ):
             return (
                 "ssl_mismatch",
-                "SSL/TLS handshake failed: target PostgreSQL server rejected SSL. For local Docker databases, set SSL Mode to 'disable'. For cloud databases (Neon, Supabase), use 'require'.",
+                "SSL/TLS handshake failed: target PostgreSQL server rejected SSL. For local Docker databases, set SSL Mode to 'disable'. For cloud databases, use 'require'.",
             )
 
         # 4. Unreachable / Timeout / Network refusal

@@ -87,7 +87,7 @@ export function validateConnectionPayload(
   }
 
   // 6. Password Validation
-  // Cloud providers (Neon, Supabase, RDS) mandate password
+  // Cloud database providers mandate password
   if (selectedPreset === "cloud" && (!payload.password || !payload.password.trim())) {
     errors.password = "Password is required for cloud database connections.";
   }

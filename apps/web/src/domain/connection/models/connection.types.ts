@@ -98,3 +98,25 @@ export interface ConnectionTestResult {
 export interface TableExclusionPayload {
   is_excluded: boolean;
 }
+
+export interface TableRowsResponse {
+  table_name: string;
+  schema: string;
+  columns: ColumnMetadata[];
+  rows: Record<string, unknown>[];
+  total_count: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface GetTableRowsParams {
+  connectionId: string;
+  tableName: string;
+  schema?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+  order?: "asc" | "desc";
+}
+

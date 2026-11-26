@@ -168,9 +168,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
       const connections = await repo.listConnections();
       set({ connections, isLoadingConnections: false });
 
-      // Automatically select the first active connection if none currently selected
+      // Automatically select the first active connection only if none currently selected
       const currentActive = get().activeConnection;
-      if (!currentActive && connections.length > 0) {
+      const currentSchema = get().activeSchema;
+      if (!currentActive && !currentSchema && connections.length > 0) {
         const first = connections[0];
         set({ activeConnection: first });
         await get().selectConnection(first.id, repo);
@@ -182,8 +183,23 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   selectConnection: async (connectionId: string, repo = defaultConnectionRepository) => {
-    const currentList = get().connections;
-    const match = currentList.find((c) => c.id === connectionId) || null;
+    let currentList = get().connections;
+    if (currentList.length === 0) {
+      try {
+        currentList = await repo.listConnections();
+        set({ connections: currentList });
+      } catch {
+        // ignore
+      }
+    }
+    let match = currentList.find((c) => c.id === connectionId) || null;
+    if (!match) {
+      try {
+        match = await repo.getConnection(connectionId);
+      } catch {
+        // ignore
+      }
+    }
     set({ activeConnection: match, isLoadingSchema: true, errorMessage: null });
 
     try {

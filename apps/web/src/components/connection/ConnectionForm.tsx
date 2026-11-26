@@ -40,7 +40,7 @@ export function ConnectionForm({
   const sslOptions: { value: SSLMode; label: string }[] = [
     { value: "disable", label: "disable (Plaintext TCP - Local / Docker)" },
     { value: "prefer", label: "prefer (Try SSL first, fallback to TCP)" },
-    { value: "require", label: "require (Enforce TLS - Supabase / Neon / RDS)" },
+    { value: "require", label: "require (Enforce TLS - Cloud Hosted Databases)" },
     { value: "verify-ca", label: "verify-ca (Verify Certificate Authority chain)" },
     { value: "verify-full", label: "verify-full (Verify CA chain and Hostname match)" },
   ];

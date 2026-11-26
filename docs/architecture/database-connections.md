@@ -13,7 +13,7 @@ Following QueryForge AI's self-hosted, downloadable developer model, the applica
    - Standard connectivity: Plaintext TCP (`sslmode=disable` or `prefer`) or self-signed TLS. Direct socket connectivity without requiring external reverse-tunnel agents.
 
 2. **Online & Cloud-Hosted Databases:**
-   - Managed cloud PostgreSQL instances (e.g., Supabase, Neon, AWS RDS, GCP Cloud SQL, Azure Database for PostgreSQL, Railway, Aiven).
+   - Managed cloud PostgreSQL instances (e.g., AWS RDS, GCP Cloud SQL, Azure Database for PostgreSQL, cloud-hosted instances).
    - Standard connectivity: TLS-encrypted connections (`sslmode=require`, `verify-ca`, or `verify-full`) over the public internet or cloud VPCs.
 
 This document details the updated network validation layer, configurable SSL/TLS negotiation, credential encryption at rest, connection pooling safeguards, and the schema discovery engine.
@@ -42,7 +42,7 @@ flowchart TD
 
     subgraph Targets["Target PostgreSQL Databases"]
         LocalDB[("Local / Network PostgreSQL<br/>localhost / host.docker.internal / LAN<br/>sslmode=disable or prefer")]
-        CloudDB[("Online / Cloud PostgreSQL<br/>Supabase / Neon / AWS RDS<br/>sslmode=require or verify-full")]
+        CloudDB[("Online / Cloud PostgreSQL<br/>Managed Cloud Providers<br/>sslmode=require or verify-full")]
     end
 
     UI -->|"1. Submit Connection Config & SSL Mode"| Router
@@ -158,13 +158,13 @@ from pydantic import BaseModel, Field
 class SSLMode(str, Enum):
     DISABLE = "disable"      # Plaintext TCP (Standard for localhost / Docker dev)
     PREFER = "prefer"        # Try SSL first, fallback to plaintext if unsupported
-    REQUIRE = "require"      # Enforce SSL/TLS (Standard for Supabase, Neon, AWS RDS)
+    REQUIRE = "require"      # Enforce SSL/TLS (Standard for cloud databases)
     VERIFY_CA = "verify-ca"  # Enforce SSL and verify CA certificate chain
     VERIFY_FULL = "verify-full" # Enforce SSL, verify CA chain and hostname match
 
 class ConnectionCreateRequest(BaseModel):
     name: str = Field(..., example="Local Dev DB")
-    host: str = Field(..., example="localhost")  # or "host.docker.internal", "192.168.1.50", "ep-xxx.neon.tech"
+    host: str = Field(..., example="localhost")  # or "host.docker.internal", "192.168.1.50", "db.example.com"
     port: int = Field(default=5432, ge=1, le=65535)
     database: str = Field(..., example="myapp_dev")
     username: str = Field(..., example="postgres")
@@ -282,7 +282,7 @@ Local development setups and production cloud databases have very different TLS 
    - Most local PostgreSQL instances (installed via Homebrew, Apt, or basic Docker images) do not have TLS certificates configured.
    - The connection pool manager creates unencrypted TCP streams when `ssl_mode=disable`, avoiding SSL handshake errors (`SSL SYSCALL error: EOF detected`).
 2. **Online Cloud Connections (`sslmode=require`, `verify-ca`, `verify-full`):**
-   - Managed cloud providers (Neon, Supabase, RDS) mandate TLS.
+   - Managed cloud providers mandate TLS.
    - The connection pool manager initializes Python's `ssl.create_default_context()` with standard root CAs to enforce encrypted in-transit data transmission over public networks.
 3. **Custom CA Certificates:**
    - For enterprise intranets or local development using self-signed root certificates (e.g. `mkcert`), an optional `custom_ca_cert` PEM string can be provided to the connection configuration.

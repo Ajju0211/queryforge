@@ -19,6 +19,7 @@ from app.schemas.connection import (
     ConnectionWithSchemaResponse,
     SchemaGraph,
     TableMetadata,
+    TableRowsResponse,
 )
 from app.services.connection_service import ConnectionService
 
@@ -407,5 +408,45 @@ async def test_delete_connection():
             response = await ac.delete("/api/v1/connections/conn-1")
         assert response.status_code == 200
         assert response.json()["success"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_get_table_rows():
+    """Test GET /api/v1/connections/{id}/tables/{table}/rows pagination & data."""
+    mock_srv = MagicMock(spec=ConnectionService)
+    mock_rows_resp = TableRowsResponse(
+        table_name="users",
+        schema="public",
+        columns=[
+            ColumnMetadata(name="id", data_type="integer", nullable=False, is_primary_key=True),
+            ColumnMetadata(name="email", data_type="character varying", nullable=False),
+        ],
+        rows=[
+            {"id": 1, "email": "alice@example.com"},
+            {"id": 2, "email": "bob@example.com"},
+        ],
+        total_count=2,
+        page=1,
+        limit=50,
+        total_pages=1,
+    )
+    mock_srv.get_table_rows = AsyncMock(return_value=mock_rows_resp)
+
+    app.dependency_overrides[get_connection_service] = lambda: mock_srv
+
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as ac:
+            response = await ac.get("/api/v1/connections/conn-1/tables/users/rows?schema=public&page=1&limit=50")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["table_name"] == "users"
+        assert len(data["rows"]) == 2
+        assert data["rows"][0]["email"] == "alice@example.com"
+        assert data["total_count"] == 2
+        assert len(data["columns"]) == 2
     finally:
         app.dependency_overrides.clear()

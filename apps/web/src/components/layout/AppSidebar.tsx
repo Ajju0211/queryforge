@@ -1,157 +1,195 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
-import { FolderKanban, Settings, ArrowLeft, Database, Table } from "lucide-react";
+import {
+  FolderKanban,
+  Settings,
+  ArrowLeft,
+  Database,
+  Table,
+  Terminal,
+  Network,
+  X,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useConnectionManager } from "@/domain/connection/hooks/useConnectionManager";
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function AppSidebar({
+  mobileOpen = false,
+  onMobileClose,
+}: AppSidebarProps) {
   const pathname = usePathname();
   const { activeConnection } = useConnectionManager();
 
+  useEffect(() => {
+    onMobileClose?.();
+    // Only close the drawer when the route changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   const isInsideProject = pathname.startsWith("/project/");
   const isSettingActive = pathname.startsWith("/setting");
+  const isSqlEditorActive = pathname.includes("/editor");
+  const isGraphActive = pathname.includes("/graph");
+  const isSchemaActive = isInsideProject && !isSqlEditorActive && !isGraphActive;
+
+  const navItemClass = (active: boolean) =>
+    cn(
+      "group relative flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-all duration-150",
+      active
+        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground ring-1 ring-sidebar-border shadow-2xs"
+        : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+    );
 
   return (
-    <aside className="w-60 shrink-0 border-r border-border bg-sidebar flex flex-col h-full z-30 select-none">
-      {/* Brand Header */}
-      <div className="h-14 border-b border-border px-4 flex items-center justify-between shrink-0 bg-sidebar">
-        <Link
-          href="/"
-          className="flex items-center gap-2 hover:opacity-90 transition-opacity"
-          aria-label="QueryForge Home"
-        >
-          <Logo size={32} glow={true} showBadge={true} />
-        </Link>
-      </div>
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] lg:hidden"
+          onClick={onMobileClose}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Main Navigation Options */}
-      <div className="flex-1 py-3 px-2.5 space-y-2 overflow-y-auto">
-        {/* If inside a selected project: change sidebar to show project context */}
-        {isInsideProject ? (
-          <>
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 transition-colors font-medium group mb-2"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-              <span>All Databases</span>
-            </Link>
-
-            {/* Active Project Card */}
-            {activeConnection && (
-              <div className="px-2.5 py-2 rounded-md bg-card border border-border flex items-center gap-2 mb-2.5 shadow-xs">
-                <div className="p-1.5 rounded-md bg-muted text-foreground shrink-0">
-                  <Database className="w-3.5 h-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    {activeConnection.name}
-                  </p>
-                  <p className="text-[10px] font-mono text-muted-foreground truncate">
-                    {activeConnection.database}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 font-mono">
-              Database
-            </div>
-
-            <nav className="space-y-1">
-              {/* Schema Table Info Option */}
-              <Link
-                href={activeConnection ? `/project/${activeConnection.id}` : "/"}
-                className={cn(
-                  "relative flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-semibold transition-all duration-150 group",
-                  "bg-muted text-foreground shadow-xs border border-border"
-                )}
-              >
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-foreground rounded-r-xs" />
-                <Table className="w-4 h-4 shrink-0 text-foreground" />
-                <span className="truncate">Schema</span>
-              </Link>
-            </nav>
-          </>
-        ) : (
-          /* Default root sidebar */
-          <>
-            <div className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 font-mono">
-              Menu
-            </div>
-
-            <nav className="space-y-1">
-              {/* Project Option */}
-              <Link
-                href="/"
-                className={cn(
-                  "relative flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-all duration-150 group",
-                  !isSettingActive
-                    ? "bg-muted text-foreground font-semibold shadow-xs border border-border"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-transparent"
-                )}
-              >
-                {!isSettingActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-foreground rounded-r-xs" />
-                )}
-                <FolderKanban
-                  className={cn(
-                    "w-4 h-4 shrink-0 transition-colors",
-                    !isSettingActive
-                      ? "text-foreground"
-                      : "text-muted-foreground group-hover:text-foreground"
-                  )}
-                />
-                <span className="truncate">Project</span>
-              </Link>
-
-              {/* Other Option (Setting) in the same sidebar */}
-              <Link
-                href="/settings"
-                className={cn(
-                  "relative flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-all duration-150 group",
-                  isSettingActive
-                    ? "bg-muted text-foreground font-semibold shadow-xs border border-border"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-transparent"
-                )}
-              >
-                {isSettingActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-foreground rounded-r-xs" />
-                )}
-                <Settings
-                  className={cn(
-                    "w-4 h-4 shrink-0 transition-colors",
-                    isSettingActive
-                      ? "text-foreground"
-                      : "text-muted-foreground group-hover:text-foreground"
-                  )}
-                />
-                <span className="truncate">Setting</span>
-              </Link>
-            </nav>
-          </>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex h-full w-64 shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-200 ease-out lg:static lg:translate-x-0",
+          mobileOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"
         )}
-      </div>
-
-      {/* Sidebar Footer */}
-      <div className="p-2.5 border-t border-border bg-sidebar flex items-center justify-between">
-        <div className="flex items-center gap-2 px-1">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span className="text-[11px] font-mono font-medium text-muted-foreground">
-            QueryForge AI
-          </span>
+      >
+        {/* Brand header — shares the 48px rail with every workspace */}
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-sidebar-border px-3">
+          <Link
+            href="/"
+            className="flex min-w-0 items-center gap-2 rounded-md hover:opacity-90"
+            aria-label="QueryForge home"
+          >
+            <Logo size={28} glow={false} showBadge={true} />
+          </Link>
+          <button
+            type="button"
+            onClick={onMobileClose}
+            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-foreground lg:hidden"
+            aria-label="Close navigation"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        <ThemeToggle />
-      </div>
-    </aside>
+        {/* Navigation */}
+        <div className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
+          {isInsideProject ? (
+            <>
+              <Link
+                href="/"
+                className="group mb-2 flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+                <span>All databases</span>
+              </Link>
+
+              {/* Active database card */}
+              {activeConnection && (
+                <div className="mb-3 flex items-center gap-2 rounded-md border border-sidebar-border bg-card px-2.5 py-2 shadow-2xs">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-muted text-foreground">
+                    <Database className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12px] font-medium text-foreground">
+                      {activeConnection.name}
+                    </p>
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">
+                      {activeConnection.database}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "h-2 w-2 shrink-0 rounded-full",
+                      activeConnection.status === "ACTIVE"
+                        ? "bg-signal"
+                        : activeConnection.status === "UNREACHABLE"
+                        ? "bg-destructive"
+                        : "bg-warning"
+                    )}
+                    title={`Status: ${activeConnection.status}`}
+                  />
+                </div>
+              )}
+
+              <p className="px-2.5 pb-1.5 text-[11px] font-medium text-muted-foreground">
+                Workspace
+              </p>
+
+              <nav className="space-y-0.5">
+                <Link
+                  href={activeConnection ? `/project/${activeConnection.id}` : "/"}
+                  className={navItemClass(isSchemaActive)}
+                >
+                  <Table className="h-4 w-4 shrink-0 transition-transform group-hover:scale-105" />
+                  <span className="truncate">Schema</span>
+                </Link>
+
+                <Link
+                  href={activeConnection ? `/project/${activeConnection.id}/graph` : "/"}
+                  className={navItemClass(isGraphActive)}
+                >
+                  <Network className="h-4 w-4 shrink-0 transition-transform group-hover:scale-105" />
+                  <span className="truncate">ER diagram</span>
+                </Link>
+
+                <Link
+                  href={activeConnection ? `/project/${activeConnection.id}/editor` : "/"}
+                  className={navItemClass(isSqlEditorActive)}
+                >
+                  <Terminal className="h-4 w-4 shrink-0 transition-transform group-hover:scale-105" />
+                  <span className="truncate">SQL editor</span>
+                </Link>
+              </nav>
+            </>
+          ) : (
+            <>
+              <p className="px-2.5 pb-1.5 text-[11px] font-medium text-muted-foreground">
+                Workspace
+              </p>
+
+              <nav className="space-y-0.5">
+                <Link href="/" className={navItemClass(!isSettingActive)}>
+                  <FolderKanban className="h-4 w-4 shrink-0 transition-transform group-hover:scale-105" />
+                  <span className="truncate">Databases</span>
+                </Link>
+
+                <Link href="/settings" className={navItemClass(isSettingActive)}>
+                  <Settings className="h-4 w-4 shrink-0 transition-transform group-hover:scale-105" />
+                  <span className="truncate">Settings</span>
+                </Link>
+              </nav>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex h-12 shrink-0 items-center justify-between border-t border-sidebar-border px-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-signal opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-signal" />
+            </span>
+            <span className="truncate font-mono text-[11px] text-muted-foreground">
+              QueryForge AI
+            </span>
+          </div>
+          <ThemeToggle />
+        </div>
+      </aside>
+    </>
   );
 }

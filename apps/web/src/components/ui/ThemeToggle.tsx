@@ -22,7 +22,7 @@ export function ThemeToggle() {
         <Button
           variant="outline"
           size="icon-sm"
-          className="rounded-md border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground h-7.5 w-7.5"
+          className="h-8 w-8 rounded-md border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
           title="Switch theme"
           aria-label="Switch theme"
         >

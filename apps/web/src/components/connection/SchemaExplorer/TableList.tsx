@@ -48,17 +48,17 @@ export function TableList({
               key={`${table.schema}.${table.name}`}
               type="button"
               onClick={() => onSelectTable(table.name)}
-              className={`w-full text-left p-3 transition-colors flex items-center justify-between gap-3 group relative cursor-pointer ${
+              className={`w-full text-left p-2.5 transition-all duration-150 flex items-center justify-between gap-3 group relative cursor-pointer rounded-md my-0.5 ${
                 isSelected
-                  ? "bg-muted text-foreground border-l-2 border-foreground font-medium"
-                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                  ? "bg-accent/70 text-foreground ring-1 ring-border/80 shadow-2xs font-medium"
+                  : "hover:bg-muted/40 text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div
                   className={`p-1.5 rounded-md transition-colors ${
                     isSelected
-                      ? "bg-card text-foreground border border-border"
+                      ? "bg-card text-foreground border border-border shadow-2xs"
                       : "bg-muted/60 text-muted-foreground group-hover:text-foreground"
                   }`}
                 >
@@ -71,7 +71,7 @@ export function TableList({
                       {displayName}
                     </span>
                     {table.is_excluded && (
-                      <Badge variant="amber" size="sm" className="text-[9px] px-1.5 py-0">
+                      <Badge variant="amber" size="sm" className="text-[10px] px-1.5 py-0">
                         <EyeOff className="w-2.5 h-2.5 mr-0.5" />
                         Hidden
                       </Badge>

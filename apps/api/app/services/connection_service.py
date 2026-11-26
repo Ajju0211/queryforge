@@ -9,9 +9,12 @@ Adheres strictly to docs/architecture/database-connections.md (§3, §7, and §8
 6. Safe, sanitized error messages with zero credential exposure.
 """
 
+import datetime
+import decimal
 import logging
+import time
 import uuid
-from typing import List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security.crypto import CryptoVault, default_crypto_vault
@@ -23,8 +26,10 @@ from app.schemas.connection import (
     ConnectionTestRequest,
     ConnectionTestResponse,
     ConnectionWithSchemaResponse,
+    ExecuteQueryResponse,
     SchemaGraph,
     TableMetadata,
+    TableRowsResponse,
 )
 from app.services.connection_repository import ConnectionRepository
 from app.services.pool_manager import (
@@ -375,6 +380,257 @@ class ConnectionService:
             )
 
         return True
+
+    async def get_table_rows(
+        self,
+        connection_id: str,
+        table_name: str,
+        schema_name: str = "public",
+        page: int = 1,
+        limit: int = 50,
+        sort: Optional[str] = None,
+        order: Optional[str] = "asc",
+    ) -> TableRowsResponse:
+        """Fetch paginated table rows with column metadata for data inspection.
+
+        Security:
+            Guarantees SQL injection prevention by strictly whitelisting table_name,
+            schema_name, and sort column names against the introspected SchemaGraph.
+        """
+        connection = await self.repository.get_by_id(connection_id)
+        if not connection:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Connection '{connection_id}' not found.",
+            )
+
+        schema_graph = await self.get_connection_schema(connection_id)
+        target_table = None
+        for t in schema_graph.tables:
+            if t.name == table_name and (t.schema_name == schema_name or not schema_name):
+                target_table = t
+                break
+
+        if not target_table:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Table '{schema_name}.{table_name}' not found in connection schema.",
+            )
+
+        # Validate sort column if provided
+        valid_columns = {col.name: col for col in target_table.columns}
+        sort_column = None
+        if sort:
+            if sort not in valid_columns:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid sort column '{sort}'. Valid columns: {list(valid_columns.keys())}",
+                )
+            sort_column = sort
+
+        sort_direction = "ASC"
+        if order and order.lower() == "desc":
+            sort_direction = "DESC"
+
+        # Sanitize pagination parameters
+        safe_page = max(1, page)
+        safe_limit = max(1, min(limit, 100))
+        offset = (safe_page - 1) * safe_limit
+
+        # Build order clause
+        if sort_column:
+            order_clause = f'ORDER BY "{sort_column}" {sort_direction}'
+        else:
+            # Default to primary key column if available for deterministic pagination
+            pk_col = next((c.name for c in target_table.columns if c.is_primary_key), None)
+            if pk_col:
+                order_clause = f'ORDER BY "{pk_col}" ASC'
+            else:
+                order_clause = ""
+
+        safe_schema = target_table.schema_name
+        safe_table = target_table.name
+        table_identifier = f'"{safe_schema}"."{safe_table}"'
+
+        count_query = f"SELECT COUNT(*) FROM {table_identifier};"
+        data_query = f"SELECT * FROM {table_identifier} {order_clause} LIMIT $1 OFFSET $2;"
+
+        password = self.crypto_vault.decrypt(connection.encrypted_password)
+
+        try:
+            async with self.pool_manager.acquire_connection(
+                connection_id=connection.id,
+                host=connection.host,
+                port=connection.port,
+                database=connection.database,
+                username=connection.username,
+                password=password,
+                ssl_mode=connection.ssl_mode,
+                custom_ca_cert=connection.custom_ca_cert,
+            ) as conn:
+                try:
+                    total_count = await conn.fetchval(count_query)
+                except Exception:
+                    total_count = target_table.estimated_row_count or 0
+
+                records = await conn.fetch(data_query, safe_limit, offset)
+
+                def serialize_val(val: Any) -> Any:
+                    if val is None:
+                        return None
+                    if isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
+                        return val.isoformat()
+                    if isinstance(val, uuid.UUID):
+                        return str(val)
+                    if isinstance(val, decimal.Decimal):
+                        return float(val)
+                    if isinstance(val, (bytes, bytearray, memoryview)):
+                        return bytes(val).hex()
+                    return val
+
+                rows = [
+                    {k: serialize_val(v) for k, v in dict(record).items()}
+                    for record in records
+                ]
+
+                total_pages = (total_count + safe_limit - 1) // safe_limit if total_count > 0 else 1
+
+                return TableRowsResponse(
+                    table_name=safe_table,
+                    schema_name=safe_schema,
+                    columns=target_table.columns,
+                    rows=rows,
+                    total_count=total_count,
+                    page=safe_page,
+                    limit=safe_limit,
+                    total_pages=total_pages,
+                )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to fetch rows for {table_identifier}: {e}")
+            cat, msg = self.pool_manager.categorize_error(e, password)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to read table rows: {msg}",
+            ) from e
+
+    async def execute_query(
+        self,
+        connection_id: str,
+        query: str,
+    ) -> ExecuteQueryResponse:
+        """Execute an arbitrary SQL query on the target database without restrictions.
+        
+        Permits DDL, DML, DQL (SELECT, INSERT, UPDATE, DELETE, CREATE TABLE, ALTER TABLE, etc.).
+        """
+        connection = await self.repository.get_by_id(connection_id)
+        if not connection:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Connection '{connection_id}' not found.",
+            )
+
+        password = self.crypto_vault.decrypt(connection.encrypted_password)
+        start_time = time.perf_counter()
+
+        def serialize_val(val: Any) -> Any:
+            if val is None:
+                return None
+            if isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
+                return val.isoformat()
+            if isinstance(val, uuid.UUID):
+                return str(val)
+            if isinstance(val, decimal.Decimal):
+                return float(val)
+            if isinstance(val, (bytes, bytearray, memoryview)):
+                return bytes(val).hex()
+            if isinstance(val, (dict, list)):
+                return val
+            return val
+
+        try:
+            async with self.pool_manager.acquire_connection(
+                connection_id=connection.id,
+                host=connection.host,
+                port=connection.port,
+                database=connection.database,
+                username=connection.username,
+                password=password,
+                ssl_mode=connection.ssl_mode,
+                custom_ca_cert=connection.custom_ca_cert,
+            ) as conn:
+                clean_sql = query.strip()
+                if not clean_sql:
+                    return ExecuteQueryResponse(
+                        success=True,
+                        command="EMPTY",
+                        columns=[],
+                        rows=[],
+                        row_count=0,
+                        execution_time_ms=0.0,
+                    )
+
+                # Split multiple statements if any
+                try:
+                    import sqlglot
+                    statements = [
+                        s for s in sqlglot.transpile(clean_sql, read="postgres", write="postgres")
+                        if s.strip()
+                    ]
+                except Exception:
+                    statements = [clean_sql]
+
+                if not statements:
+                    statements = [clean_sql]
+
+                columns: List[str] = []
+                rows: List[Dict[str, Any]] = []
+                command_status: str = ""
+
+                def is_fetchable(stmt: str) -> bool:
+                    s = stmt.strip().upper()
+                    return s.startswith(("SELECT", "SHOW", "EXPLAIN", "WITH")) or " RETURNING " in s or s.endswith(" RETURNING *")
+
+                for i, stmt in enumerate(statements):
+                    is_last = (i == len(statements) - 1)
+                    if is_last and is_fetchable(stmt):
+                        records = await conn.fetch(stmt)
+                        if records:
+                            columns = list(records[0].keys())
+                            rows = [
+                                {k: serialize_val(v) for k, v in dict(r).items()}
+                                for r in records
+                            ]
+                        command_status = f"SELECT {len(rows)}"
+                    else:
+                        command_status = await conn.execute(stmt)
+
+                duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+                return ExecuteQueryResponse(
+                    success=True,
+                    command=command_status or "OK",
+                    columns=columns,
+                    rows=rows,
+                    row_count=len(rows),
+                    execution_time_ms=duration_ms,
+                    error=None,
+                )
+
+        except Exception as e:
+            duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+            logger.warning(f"Query execution error on {connection.database}: {e}")
+            cat, msg = self.pool_manager.categorize_error(e, password)
+            return ExecuteQueryResponse(
+                success=False,
+                command=None,
+                columns=[],
+                rows=[],
+                row_count=0,
+                execution_time_ms=duration_ms,
+                error=msg if cat != "general" else str(e),
+            )
 
     def _serialize_connection(self, connection: DatabaseConnection) -> ConnectionResponse:
         """Convert SQLAlchemy model to public Pydantic model (omitting password)."""

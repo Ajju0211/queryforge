@@ -24,7 +24,7 @@
 ## ⚡ Overview
 
 **QueryForge AI** is an open-source, developer-first AI Database Workspace designed for PostgreSQL. It allows developers and data teams to:
-- Connect securely to local databases (Docker/localhost/LAN) or managed cloud databases (Neon, Supabase, AWS RDS, GCP Cloud SQL).
+- Connect securely to local databases (Docker/localhost/LAN) or managed cloud databases (AWS RDS, GCP Cloud SQL, cloud-hosted PostgreSQL).
 - Automatically introspect catalog metadata to generate interactive schema explorers and entity-relationship dependency graphs.
 - Ask questions in natural language and receive safe, read-only SQL queries powered by **Google Gemini 2.0 Flash** with multi-pass AST query safety validation.
 
@@ -33,7 +33,7 @@
 ## 🚀 Key Features
 
 * **🔌 Universal PostgreSQL Connector:**
-  - One-click presets for **Local Dev** (Docker/localhost), **Cloud** (Neon, Supabase, RDS), and **Custom Intranet** environments.
+  - One-click presets for **Local Dev** (Docker/localhost), **Cloud Databases**, and **Custom Intranet** environments.
   - Built-in diagnostic connection probe with latency calculation (`ms`) and SSL negotiation verification (`disable`, `prefer`, `require`, `verify-ca`, `verify-full`).
 
 * **🛡️ SSRF & Network Guardrails:**

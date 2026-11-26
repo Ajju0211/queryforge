@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, Geist } from "next/font/google";
+import { Inter, Space_Grotesk, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/providers/ThemeProvider";
-import "./globals.css";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["500", "600", "700"],
-});
+import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -20,9 +14,18 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/sonner";
-import { AppShell } from "@/components/layout/AppShell";
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["500", "600", "700"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "QueryForge AI — Intelligent Database Studio",
@@ -45,10 +48,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
-      <body
-        className={`${spaceGrotesk.variable} ${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`}
-      >
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn(inter.variable, spaceGrotesk.variable, geistMono.variable)}
+    >
+      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         {/* ThemeProvider is the single source of truth for dark/light class on <html> */}
         <ThemeProvider>
           <TooltipProvider delayDuration={200}>

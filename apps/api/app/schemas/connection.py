@@ -5,7 +5,7 @@ Guarantees password is NEVER serialized or returned in any response.
 """
 
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -13,7 +13,7 @@ class SSLMode(str, Enum):
     """Supported SSL/TLS modes for PostgreSQL connections."""
     DISABLE = "disable"          # Plaintext TCP (Standard for localhost / Docker dev)
     PREFER = "prefer"            # Try SSL first, fallback to plaintext if unsupported
-    REQUIRE = "require"          # Enforce SSL/TLS (Standard for Supabase, Neon, AWS RDS)
+    REQUIRE = "require"          # Enforce SSL/TLS (Standard for cloud databases)
     VERIFY_CA = "verify-ca"      # Enforce SSL and verify CA certificate chain
     VERIFY_FULL = "verify-full"  # Enforce SSL, verify CA chain and hostname match
 
@@ -150,3 +150,34 @@ class ConnectionWithSchemaResponse(BaseModel):
     """Connection response paired with its introspected schema graph."""
     connection: ConnectionResponse
     schema_graph: Optional[SchemaGraph] = None
+
+
+class TableRowsResponse(BaseModel):
+    """Response model containing paginated rows and column metadata for a database table."""
+    table_name: str
+    schema_name: str = Field(..., alias="schema", serialization_alias="schema")
+    columns: List[ColumnMetadata] = Field(default_factory=list)
+    rows: List[Dict[str, Any]] = Field(default_factory=list)
+    total_count: int
+    page: int
+    limit: int
+    total_pages: int
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ExecuteQueryRequest(BaseModel):
+    """Payload to execute an arbitrary SQL query on target database."""
+    query: str = Field(..., min_length=1, description="Raw SQL query string to execute")
+
+
+class ExecuteQueryResponse(BaseModel):
+    """Result of arbitrary SQL query execution."""
+    success: bool
+    command: Optional[str] = None
+    columns: List[str] = Field(default_factory=list)
+    rows: List[Dict[str, Any]] = Field(default_factory=list)
+    row_count: int = 0
+    execution_time_ms: float = 0.0
+    error: Optional[str] = None
+

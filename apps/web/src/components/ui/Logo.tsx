@@ -73,7 +73,7 @@ export function Logo({
               <Badge
                 variant="secondary"
                 size="sm"
-                className="font-medium uppercase tracking-wider text-[9px] px-1.5 py-0"
+                className="font-medium uppercase tracking-wider text-[10px] px-1.5 py-0"
               >
                 {badgeText}
               </Badge>

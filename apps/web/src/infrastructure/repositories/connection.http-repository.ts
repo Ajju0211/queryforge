@@ -10,7 +10,9 @@ import {
   ConnectionTestPayload,
   ConnectionTestResult,
   ConnectionWithSchema,
+  GetTableRowsParams,
   SchemaGraph,
+  TableRowsResponse,
 } from "@/domain/connection/models/connection.types";
 import { IConnectionRepository } from "@/domain/connection/repositories/connection.repository";
 import { apiClient, API_ENDPOINTS } from "../api";
@@ -84,6 +86,24 @@ export class HttpConnectionRepository implements IConnectionRepository {
       { is_excluded: isExcluded }
     );
     return res.success;
+  }
+
+  /**
+   * Fetches paginated table rows with column metadata for data browsing.
+   */
+  async getTableRows(params: GetTableRowsParams): Promise<TableRowsResponse> {
+    const url = API_ENDPOINTS.V1.CONNECTIONS.TABLE_ROWS(
+      params.connectionId,
+      params.tableName,
+      {
+        schema: params.schema,
+        page: params.page,
+        limit: params.limit,
+        sort: params.sort,
+        order: params.order,
+      }
+    );
+    return apiClient.get<TableRowsResponse>(url, { timeoutMs: 20000 });
   }
 
   /**

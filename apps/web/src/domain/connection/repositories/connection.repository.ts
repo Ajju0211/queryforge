@@ -4,7 +4,9 @@ import {
   ConnectionTestPayload,
   ConnectionTestResult,
   ConnectionWithSchema,
+  GetTableRowsParams,
   SchemaGraph,
+  TableRowsResponse,
 } from "../models/connection.types";
 
 /**
@@ -51,6 +53,11 @@ export interface IConnectionRepository {
     isExcluded: boolean,
     schema?: string
   ): Promise<boolean>;
+
+  /**
+   * Fetch live paginated table data rows and column definitions.
+   */
+  getTableRows(params: GetTableRowsParams): Promise<TableRowsResponse>;
 
   /**
    * Delete connection and associated schema cache.

@@ -30,16 +30,16 @@ export const CONNECTION_PRESETS: Record<ConnectionPresetType, PresetConfig> = {
   cloud: {
     id: "cloud",
     label: "Cloud Database",
-    description: "Managed instances like Supabase, Neon, AWS RDS, GCP Cloud SQL.",
+    description: "Cloud database instances (e.g. AWS RDS, Google Cloud SQL, managed PostgreSQL).",
     badgeText: "TLS Encrypted",
     helperNotice:
       "Cloud databases mandate TLS encryption. SSL Mode 'require' is preselected.",
     defaults: {
       name: "Cloud PostgreSQL",
-      host: "ep-example.neon.tech",
+      host: "db.cloud-postgres.example.com",
       port: 5432,
-      database: "neondb",
-      username: "neondb_owner",
+      database: "app_production",
+      username: "app_admin",
       password: "",
       ssl_mode: "require" as SSLMode,
     },
